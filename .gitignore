@@ -3,3 +3,4 @@ node_modules/*
 !node_modules/.palceholder
 *.js
 front/ts/*.js
+!front/ts/uuidv4.min.js
