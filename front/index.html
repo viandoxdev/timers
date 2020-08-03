@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="./main.css" />
+  </head>
+
+  <body>
+    <div id="navbar">
+      <div id="win_name">timers</div>
+      <!--div id="sortDiv" class="DDown">
+        <div id="SDDicon" class="Asc"></div>
+        <div id="sortDDcontainer">
+          <div class="sortDDitem" id="SDDI0">name</div>
+          <div class="sortDDitem" id="SDDI1">id</div>
+          <div class="sortDDitem" id="SDDI2">date</div>
+          <div class="sortDDitem" id="SDDI3">time remaining</div>
+        </div>
+      <div-->
+      <div id="button_container">
+        <div id="nav_min_button" class="nav_button">
+          <div id="nav_min_icon" class="nav_icon"></div>
+        </div>
+        <div id="nav_max_button" class="nav_button">
+          <div id="nav_max_icon" class="nav_icon max_1"></div>
+        </div>
+        <div id="nav_close_button" class="nav_button">
+          <div id="nav_close_icon" class="nav_icon"></div>
+        </div>
+      </div>
+    </div>
+    <div id="timers_container"></div>
+    <div id="bottom" class="BDown">
+      <div id="Bhead">︿</div>
+      <div class="timer">
+        <div class="tc">
+          in<input class="timer_time" type="time" step="1" value="00:00" />
+        </div>
+        <div class="timer_text">
+          <input
+            class="timer_name"
+            spellcheck="false"
+            type="text"
+            placeholder="timer name"
+          />
+          <div class="tc">
+            at <input class="timer_delay" type="time" value="12:00" />
+          </div>
+        </div>
+      </div>
+      <button id="addButton"></button>
+    </div>
+    <button id="deleteAll"></button>
+    <div id="load"></div>
+    <script src="ts/uuidv4.min.js"></script>
+    <script src="ts/main.js"></script>
+  </body>
+</html>

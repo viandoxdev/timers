@@ -1,0 +1,19 @@
+{
+  "name": "timers-electron",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "@types/sqlite3": "^3.1.6",
+    "electron": "^9.1.2",
+    "sqlite3": "^5.0.0",
+    "typescript": "^3.9.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "author": "moi",
+  "license": "ISC"
+}

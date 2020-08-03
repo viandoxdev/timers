@@ -1,0 +1,5 @@
+timers.db
+node_modules/*
+!node_modules/.palceholder
+*.js
+front/ts/*.js
