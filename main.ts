@@ -1,6 +1,7 @@
 import { app, BrowserWindow, IpcMain, ipcMain } from 'electron'
 import dbm from './db'
 import sqlite3 from 'sqlite3'
+import path from 'path'
 
 const dbmShedule: Function[] = []
 
@@ -13,9 +14,9 @@ function createWindow() {
             enableRemoteModule: true
         },
         frame: false,
-        icon: "./timer.png"
+        icon: path.join(__dirname, "./timer.png")
     })
-    win.loadFile("./front/index.html")
+    win.loadFile(path.join(__dirname, "./front/index.html"))
     win.on('closed', () => {
         win = null;
     })

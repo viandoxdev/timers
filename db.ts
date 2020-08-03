@@ -1,4 +1,5 @@
 import sql from 'sqlite3'
+import path from 'path'
 
 interface TimerData {
     id: string,
@@ -7,7 +8,7 @@ interface TimerData {
     notSent: boolean
 }
 async function init(): Promise<sql.Database> {
-    const db = await sqlDatabase('./timers.db');
+    const db = await sqlDatabase(path.join(__dirname, '/timers.db'));
     await run(db,
         `CREATE TABLE IF NOT EXISTS "Timers" (
                 "id"	TEXT NOT NULL UNIQUE,
