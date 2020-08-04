@@ -17,6 +17,8 @@ const timerHourInput = <HTMLInputElement>document.querySelector("#bottom input.t
 const timerNewButton = <HTMLButtonElement>document.querySelector("#addButton");
 const timerDelbutton = <HTMLButtonElement>document.querySelector("#deleteAll");
 
+let timerNameInputFocused = false;
+
 const loadingBar = <HTMLDivElement>document.querySelector("#load");
 var priority = true;
 
@@ -290,8 +292,9 @@ class Timer {
 Timer.updatedomLoop();
 
 function DateToStringHM(date: Date, rm1h: boolean = false) {
+    const d = rm1h ? new Date(date.getTime() - 3600000) : date;
     const f = (str: string | number) => new Array(2 - (str + "").length).fill("0").join("") + str;
-    return `${f(date.getHours() - <number><unknown>rm1h)}:${f(date.getMinutes())}`
+    return `${f(d.getHours())}:${f(d.getMinutes())}`
 }
 
 function DateToStringMS(date: Date) {
@@ -337,11 +340,31 @@ function updateInputs() {
         }
         const d = new Date(t - dh);
 
-        timerEndInput.value = DateToStringHM(d).split(":").shift() + ":" + DateToStringMS(d);
+        timerEndInput.value = DateToStringHM(d, true).split(":").shift() + ":" + DateToStringMS(d);
     }
 }
 
 setInterval(updateInputs, 1000);
 
-timerNewButton.addEventListener("mousedown", () => { new Timer(new Date(new Date().getTime() + timerEndInput.valueAsNumber), timerNameInput.value === "" ? "untitled" : timerNameInput.value) });
+function newTimer() {
+    new Timer(new Date(new Date().getTime() + timerEndInput.valueAsNumber), timerNameInput.value === "" ? "untitled" : timerNameInput.value)
+}
+
+timerNewButton.addEventListener("mousedown", newTimer);
 timerDelbutton.addEventListener("mousedown", () => Timer.deleteAll());
+
+
+timerNameInput.addEventListener("focusin", () => {
+    timerNameInputFocused = true;
+});
+
+timerNameInput.addEventListener("focusout", () => {
+    timerNameInputFocused = false;
+});
+
+window.addEventListener('keydown', e => {
+    if (e.keyCode === 13 && timerNameInputFocused) {
+        newTimer();
+        timerNameInput.blur();
+    }
+});
