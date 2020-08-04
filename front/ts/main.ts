@@ -1,4 +1,5 @@
 ///<reference path="../../node_modules/electron/electron.d.ts" />
+///<reference path="../../types.d.ts" />
 const { BrowserWindow, remote, ipcRenderer } = require("electron");
 
 const win = <() => Electron.BrowserWindow>remote.BrowserWindow.getFocusedWindow;
@@ -19,17 +20,10 @@ const timerDelbutton = <HTMLButtonElement>document.querySelector("#deleteAll");
 const loadingBar = <HTMLDivElement>document.querySelector("#load");
 var priority = true;
 
-interface TimerData {
-    id: string,
-    endDate: number,
-    name: string,
-    notSent: boolean
-}
-
 ipcRenderer.on("getTimersRes", (event, args: TimerData[]) => {
     loadingBar.remove();
     for (let i of args) {
-        const t = new Timer(new Date(i.endDate), i.name, i.id, false);
+        const t = new Timer(new Date(i.endDate), i.name, i.id, new Date(i.creationDate), false);
         t.notificationSent = true;
     }
 });
@@ -88,57 +82,98 @@ class Timer {
         TextElement: HTMLDivElement,
         NameElement: HTMLDivElement,
         DelayElement: HTMLDivElement,
-        DeleteElement: HTMLDivElement
+        DeleteElement: HTMLDivElement,
+        ResetElement: HTMLDivElement
     };
     name: string;
     id: string;
     notificationSent: boolean = false;
-    constructor(completionDate: Date, name: string, id?: string, db = true) {
+    creationDate: Date;
+    constructor(completionDate: Date, name: string, id?: string, creationDate = new Date(), db = true) {
         this.name = name
-        this.endDate = completionDate
+        this.endDate = completionDate;
+        this.creationDate = creationDate
         // because im using the downloaded browser side version to work offline
         /// @ts-expect-error
         if (id === undefined) this.id = uuidv4();
         else this.id = id;
-        this.DOMEls = {
-            TimerElement: document.createElement("div"),
-            TimeElement: document.createElement("div"),
-            TextElement: document.createElement("div"),
-            NameElement: document.createElement("div"),
-            DelayElement: document.createElement("div"),
-            DeleteElement: document.createElement("div")
+        {
+            const div = () => document.createElement('div');
+            this.DOMEls = {
+                TimerElement: div(),
+                TimeElement: div(),
+                TextElement: div(),
+                NameElement: div(),
+                DelayElement: div(),
+                DeleteElement: div(),
+                ResetElement: div(),
+            }
+            this.DOMEls.TimerElement.classList.add("timer");
+            this.DOMEls.TimeElement.classList.add("timer_time");
+            this.DOMEls.TextElement.classList.add("timer_text");
+            this.DOMEls.NameElement.classList.add("timer_name");
+            this.DOMEls.DelayElement.classList.add("timer_delay");
+            this.DOMEls.DeleteElement.classList.add("timer_delete");
+            this.DOMEls.ResetElement.classList.add("timer_reset");
+            this.DOMEls.TimeElement.innerHTML = "00:00"
+            this.DOMEls.DelayElement.innerHTML = "00:00"
+            this.DOMEls.NameElement.innerHTML = name
+            this.DOMEls.TextElement.appendChild(this.DOMEls.NameElement);
+            this.DOMEls.TextElement.appendChild(this.DOMEls.DelayElement);
+            this.DOMEls.TimerElement.appendChild(this.DOMEls.TimeElement);
+            this.DOMEls.TimerElement.appendChild(this.DOMEls.TextElement);
+            this.DOMEls.TimerElement.appendChild(this.DOMEls.ResetElement);
+            this.DOMEls.TimerElement.appendChild(this.DOMEls.DeleteElement);
+            Timer.TimerParentElements.appendChild(this.DOMEls.TimerElement);
+            this.DOMEls.DeleteElement.addEventListener('click', this.delete.bind(this));
+            this.DOMEls.ResetElement.addEventListener('click', this.reset.bind(this));
+            Timer.TimersList.push(this);
+            requestAnimationFrame(() => {
+                this.DOMEls.TimerElement.style.opacity = "0";
+                this.DOMEls.TimerElement.style.transition = "all 0s";
+                requestAnimationFrame(() => {
+                    this.DOMEls.TimerElement.style.opacity = "1";
+                    this.DOMEls.TimerElement.style.transition = "all 0.2s";
+                });
+            });
         }
-        this.DOMEls.TimerElement.classList.add("timer");
-        this.DOMEls.TimeElement.classList.add("timer_time");
-        this.DOMEls.TextElement.classList.add("timer_text");
-        this.DOMEls.NameElement.classList.add("timer_name");
-        this.DOMEls.DelayElement.classList.add("timer_delay");
-        this.DOMEls.DeleteElement.classList.add("timer_delete");
-        this.DOMEls.TimeElement.innerHTML = "00:00"
-        this.DOMEls.DelayElement.innerHTML = "00:00"
-        this.DOMEls.NameElement.innerHTML = name
-        this.DOMEls.TextElement.appendChild(this.DOMEls.NameElement);
-        this.DOMEls.TextElement.appendChild(this.DOMEls.DelayElement);
-        this.DOMEls.TimerElement.appendChild(this.DOMEls.TimeElement);
-        this.DOMEls.TimerElement.appendChild(this.DOMEls.TextElement);
-        this.DOMEls.TimerElement.appendChild(this.DOMEls.DeleteElement)
-        Timer.TimerParentElements.appendChild(this.DOMEls.TimerElement);
-        this.DOMEls.DeleteElement.addEventListener('click', this.delete.bind(this))
-        Timer.TimersList.push(this);
         if (db) {
             ipcRenderer.send("addTimersReq", this.toTimerData());
         }
         Timer.sort();
     }
 
+    reset() {
+        const dif = this.endDate.getTime() - this.creationDate.getTime();
+        this.endDate = new Date(new Date().getTime() + dif);
+        this.creationDate = new Date();
+        ipcRenderer.send("editTimersReq", this.toTimerData());
+        Timer.sort();
+    }
+
     static sort() {
         const sortParentEl = this.TimerParentElements;
-        let tmp: HTMLDivElement[] = this.TimersList.sort(this.getSortfunction()).map(v => v.DOMEls.TimerElement);
+        const sortedTimerObject = this.TimersList.sort(this.getSortfunction());
+        const oldsYs: number[] = sortedTimerObject.map(v => v.DOMEls.TimerElement.getBoundingClientRect().top);
+        let tmp: HTMLDivElement[] = sortedTimerObject.map(v => v.DOMEls.TimerElement);
         const sortEls = this.reverseSort ? tmp : tmp.reverse();
         for (let i of sortEls) {
             sortParentEl.insertBefore(i, sortParentEl.firstChild);
         }
-
+        const newYs: number[] = sortedTimerObject.map(v => v.DOMEls.TimerElement.getBoundingClientRect().top);
+        const deltas: number[] = oldsYs.map((v, i) => v - newYs[i]);
+        requestAnimationFrame(() => {
+            sortedTimerObject.forEach((v, i) => {
+                v.DOMEls.TimerElement.style.transition = "all 0s";
+                v.DOMEls.TimerElement.style.transform = `translateY(${deltas[i]}px)`;
+            });
+            requestAnimationFrame(() => {
+                sortedTimerObject.forEach((v, i) => {
+                    v.DOMEls.TimerElement.style.transition = "all 0.1s";
+                    v.DOMEls.TimerElement.style.transform = ``;
+                });
+            });
+        })
 
     }
 
@@ -170,7 +205,8 @@ class Timer {
             endDate: this.endDate.getTime(),
             name: this.name,
             id: this.id,
-            notSent: this.notificationSent
+            notSent: this.notificationSent,
+            creationDate: this.creationDate.getTime()
         }
     }
 
@@ -208,16 +244,42 @@ class Timer {
     delete() {
         this.deleteWithoutDB();
         ipcRenderer.send("removeTimersReq", this.id);
+        Timer.sort();
     }
 
     deleteWithoutDB() {
-        this.DOMEls.TimerElement.remove();
         Timer.TimersList.splice(<number>Timer.TimersList.map((v, i) => v.id === this.id ? i : null).filter(v => v !== null)[0], 1);
+        this.removeFromDom();
+    }
+
+    removeFromDom(fancy = false) {
+        if (fancy) {
+            requestAnimationFrame(() => {
+                this.DOMEls.TimerElement.style.transform += " translateX(-100%)";
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        this.DOMEls.TimerElement.remove();
+                    }, 200);
+                });
+            });
+        } else {
+            requestAnimationFrame(() => {
+                this.DOMEls.TimerElement.style.opacity = "1";
+                this.DOMEls.TimerElement.style.transition = "all 0.2s";
+                requestAnimationFrame(() => {
+                    this.DOMEls.TimerElement.style.opacity = "0";
+                    this.DOMEls.TimerElement.style.transition = "all 0.2s";
+                    requestAnimationFrame(() => {
+                        this.DOMEls.TimerElement.remove();
+                    });
+                });
+            });
+        }
     }
 
     static deleteAll() {
         for (let i of this.TimersList) {
-            i.DOMEls.TimerElement.remove();
+            i.removeFromDom(true);
         }
         ipcRenderer.send("removeTimersReq", ...this.TimersList.map(v => v.id));
         this.TimersList.splice(0, this.TimersList.length);

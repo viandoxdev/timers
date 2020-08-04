@@ -1,12 +1,6 @@
 import sql from 'sqlite3'
 import path from 'path'
 
-interface TimerData {
-    id: string,
-    endDate: number,
-    name: string,
-    notSent: boolean
-}
 async function init(): Promise<sql.Database> {
     const db = await sqlDatabase(path.join(__dirname, '/timers.db'));
     await run(db,
@@ -15,6 +9,7 @@ async function init(): Promise<sql.Database> {
     "endDate"	INTEGER NOT NULL,
     "name"	TEXT NOT NULL,
     "notSent"	INTEGER NOT NULL,
+    "creationDate"	INTEGER NOT NULL,
     PRIMARY KEY("id")
 );`
     );
@@ -65,7 +60,8 @@ async function getTimers(db: sql.Database) {
             id: row.id,
             name: row.name,
             endDate: row.endDate * 1000,
-            notSent: row.notSent === 1
+            notSent: row.notSent === 1,
+            creationDate: row.creationDate * 1000
         });
     });
     return res;
@@ -79,7 +75,9 @@ async function addTimers(db: sql.Database, ...timers: TimerData[]) {
             if (i.id === j) found = true;
         }
         if (!found) {
-            await run(db, "INSERT INTO timers VALUES(?,?,?,?)", i.id, Math.floor(i.endDate / 1000), i.name, i.notSent ? 1 : 0);
+            await run(db, "INSERT INTO timers VALUES(?,?,?,?,?)", i.id, Math.floor(i.endDate / 1000), i.name, i.notSent ? 1 : 0, Math.floor(i.creationDate / 1000));
+        } else {
+            await run(db, "UPDATE timers SET endDate = ?, name = ?, notSent = ?, creationDate = ? WHERE id = ?", Math.floor(i.endDate / 1000), i.name, i.notSent ? 1 : 0, Math.floor(i.creationDate / 1000), i.id);
         }
     }
 }
