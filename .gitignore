@@ -1,6 +1,6 @@
 timers.db
 node_modules/*
-!node_modules/.palceholder
+!node_modules/.placeholder
 *.js
 front/ts/*.js
 !front/ts/uuidv4.min.js

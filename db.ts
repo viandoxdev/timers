@@ -10,13 +10,13 @@ interface TimerData {
 async function init(): Promise<sql.Database> {
     const db = await sqlDatabase(path.join(__dirname, '/timers.db'));
     await run(db,
-        `CREATE TABLE IF NOT EXISTS "Timers" (
-                "id"	TEXT NOT NULL UNIQUE,
-                "endDate"	INTEGER NOT NULL,
-                "name"	TEXT NOT NULL,
-                "notSent" INTEGER NOT NULL
-                PRIMARY KEY("id")
-        );`
+        `CREATE TABLE "timers" (
+    "id"	TEXT NOT NULL UNIQUE,
+    "endDate"	INTEGER NOT NULL,
+    "name"	TEXT NOT NULL,
+    "notSent"	INTEGER NOT NULL,
+    PRIMARY KEY("id")
+);`
     );
 
     return db;
@@ -60,7 +60,7 @@ function each(db: sql.Database, sql: string, callBack?: ((this: sql.Statement, e
 
 async function getTimers(db: sql.Database) {
     const res: TimerData[] = [];
-    await each(db, "SELECT * FROM Timers", (err, row) => {
+    await each(db, "SELECT * FROM timers", (err, row) => {
         res.push({
             id: row.id,
             name: row.name,
@@ -79,7 +79,7 @@ async function addTimers(db: sql.Database, ...timers: TimerData[]) {
             if (i.id === j) found = true;
         }
         if (!found) {
-            await run(db, "INSERT INTO Timers VALUES(?,?,?)", i.id, Math.floor(i.endDate / 1000), i.name);
+            await run(db, "INSERT INTO timers VALUES(?,?,?,?)", i.id, Math.floor(i.endDate / 1000), i.name, i.notSent ? 1 : 0);
         }
     }
 }
@@ -87,7 +87,7 @@ async function addTimers(db: sql.Database, ...timers: TimerData[]) {
 async function removeTimers(db: sql.Database, ...timers: TimerData[] | string[]) {
     /// @ts-expect-error
     for (let i of (timers.every((v: TimerData | string) => typeof v === "string") ? timers : timers.map((v: TimerData) => v.id))) {
-        await run(db, "DELETE FROM Timers WHERE id = ?", i);
+        await run(db, "DELETE FROM timers WHERE id = ?", i);
     }
 }
 
